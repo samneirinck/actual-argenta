@@ -8,5 +8,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@actual-app/api": "^26.2.0",
+    "playwright": "^1.58.2"
   }
 }
