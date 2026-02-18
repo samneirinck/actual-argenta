@@ -1,0 +1,4 @@
+actual:
+  serverUrl: https://your-actual-server.com
+  syncId: your-sync-id-here
+
