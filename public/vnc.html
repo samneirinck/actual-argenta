@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VNC - Argenta Sync</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #1a1a2e; }
+    #app { height: 100%; display: flex; flex-direction: column; }
+    #toolbar { 
+      background: #16213e; 
+      padding: 0.5rem 1rem; 
+      display: flex; 
+      align-items: center; 
+      gap: 1rem;
+      border-bottom: 1px solid #0f3460;
+    }
+    #toolbar a { color: #60a5fa; text-decoration: none; }
+    #toolbar span { color: #aaa; font-size: 0.9rem; }
+    #screen { flex: 1; }
+    #screen canvas { width: 100%; height: 100%; }
+  </style>
+  <script type="module" src="/vnc/core/rfb.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <a href="/">← Back to Dashboard</a>
+      <span id="status">Connecting...</span>
+    </div>
+    <div id="screen"></div>
+  </div>
+  <script type="module">
+    import RFB from '/vnc/core/rfb.js';
+    
+    const status = document.getElementById('status');
+    const screen = document.getElementById('screen');
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${window.location.host}/websockify`;
+    
+    status.textContent = 'Connecting to VNC...';
+    
+    const rfb = new RFB(screen, wsUrl);
+
+    rfb.scaleViewport = true;
+    rfb.resizeSession = true;
+
+    rfb.addEventListener('connect', () => {
+      status.textContent = 'Connected - Complete your login below';
+    });
+
+    rfb.addEventListener('disconnect', (e) => {
+      if (e.detail.clean) {
+        status.textContent = 'Disconnected';
+      } else {
+        status.textContent = 'Connection lost';
+      }
+    });
+  </script>
+</body>
+</html>
+

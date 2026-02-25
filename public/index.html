@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actual Argenta Sync</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      background: #16213e;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 1.5rem; color: #00a160; text-align: center; }
+    .login-section { text-align: center; margin-bottom: 2rem; }
+    .status { margin: 1rem 0; padding: 1rem; background: #0f3460; border-radius: 8px; }
+    .status-label { font-size: 0.85rem; color: #aaa; margin-bottom: 0.5rem; }
+    .status-value { font-size: 1.1rem; font-weight: 500; }
+    .status-success { color: #4ade80; }
+    .status-error { color: #f87171; }
+    .status-pending { color: #fbbf24; }
+    .login-btn {
+      background: #00a160;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-btn:hover:not(:disabled) { background: #008a52; }
+    .login-btn:disabled { background: #666; cursor: not-allowed; }
+    .vnc-link { margin-top: 1rem; }
+    .vnc-link a { color: #60a5fa; text-decoration: none; }
+    .vnc-link a:hover { text-decoration: underline; }
+    .accounts-section { margin-top: 2rem; }
+    .accounts-section h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #aaa; }
+    .account {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .account-info { text-align: left; }
+    .account-alias { font-weight: 600; margin-bottom: 0.25rem; }
+    .account-iban { font-size: 0.9rem; color: #aaa; font-family: monospace; }
+    .account-sync { font-size: 0.8rem; color: #888; margin-top: 0.5rem; }
+    .sync-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sync-btn:hover:not(:disabled) { background: #2563eb; }
+    .sync-btn:disabled { background: #666; cursor: not-allowed; }
+    .no-accounts { color: #888; text-align: center; padding: 1rem; }
+    .section { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #0f3460; }
+    .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .section h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #aaa; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      background: #0f3460;
+      color: #eee;
+      font-size: 1rem;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
+    .form-row { display: flex; gap: 1rem; }
+    .form-row .form-group { flex: 1; }
+    .btn-secondary {
+      background: #0f3460;
+      color: #60a5fa;
+      border: 1px solid #3b82f6;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #1a4a7a; }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .connection-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; }
+    .connection-status.connected { background: #166534; color: #4ade80; }
+    .connection-status.disconnected { background: #7f1d1d; color: #f87171; }
+    .connection-status.unconfigured { background: #374151; color: #9ca3af; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #16213e;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .modal h3 { margin-bottom: 1rem; color: #00a160; }
+    .modal p { margin-bottom: 1rem; color: #aaa; }
+    .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+    .modal-actions button { flex: 1; }
+    .account-linked { color: #4ade80; font-size: 0.8rem; margin-top: 0.25rem; }
+    .unlink-btn { background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.75rem; margin-left: 0.5rem; text-decoration: underline; }
+    .unlink-btn:hover { color: #ef4444; }
+    .account-actions { display: flex; gap: 0.5rem; }
+    .account-actions .sync-btn { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: 400px;
+    }
+    .toast {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .toast-success { background: #166534; color: #4ade80; }
+    .toast-error { background: #7f1d1d; color: #f87171; }
+    .toast-warning { background: #78350f; color: #fbbf24; }
+    .toast-info { background: #1e3a5f; color: #60a5fa; }
+    .toast-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .toast-content { flex: 1; }
+    .toast-title { font-weight: 600; margin-bottom: 0.25rem; }
+    .toast-message { font-size: 0.9rem; opacity: 0.9; white-space: pre-wrap; }
+    .toast-close {
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.6;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      line-height: 1;
+    }
+    .toast-close:hover { opacity: 1; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏦 Argenta Sync</h1>
+
+    <div class="section">
+      <h2>📊 Actual Budget</h2>
+      <div id="actualConfigured" style="display:none;">
+        <div class="status">
+          <div class="status-label">Connection</div>
+          <div>
+            <span id="actualStatusBadge" class="connection-status unconfigured">Loading...</span>
+          </div>
+        </div>
+        <div class="status">
+          <div class="status-label">Server</div>
+          <div id="actualServerDisplay" class="status-value" style="font-family: monospace; font-size: 0.9rem;"></div>
+        </div>
+        <div class="status">
+          <div class="status-label">Budget</div>
+          <div id="actualBudgetDisplay" class="status-value"></div>
+        </div>
+        <button class="btn-secondary" style="margin-top: 1rem;" onclick="showActualConfigForm()">Edit Configuration</button>
+      </div>
+      <div id="actualConfigForm" style="display:none;">
+        <div class="status" style="margin-bottom: 1rem;">
+          <div class="status-label">Connection</div>
+          <div>
+            <span id="actualStatusBadgeForm" class="connection-status unconfigured">Not Configured</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Server URL</label>
+          <input type="url" id="actualServerUrl" placeholder="https://your-actual-server.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="actualPassword" placeholder="Your Actual Budget password">
+        </div>
+        <div class="form-row">
+          <button class="btn-secondary" onclick="testActualConnection()">Test Connection</button>
+          <button class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="cancelActualConfigEdit()">Cancel</button>
+        </div>
+        <div id="budgetSelectGroup" class="form-group" style="display:none; margin-top:1rem;">
+          <label>Select Budget</label>
+          <select id="budgetSelect"></select>
+          <button class="login-btn" style="margin-top:1rem;" onclick="saveActualConfig()">Save Configuration</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🏦 Argenta Bank</h2>
+      <div class="status">
+        <div class="status-label">Last Login</div>
+        <div id="lastLogin" class="status-value">Loading...</div>
+      </div>
+      <div class="status">
+        <div class="status-label">Status</div>
+        <div id="loginStatus" class="status-value">Loading...</div>
+      </div>
+      <button id="loginBtn" class="login-btn" onclick="startLogin()">Login to Argenta</button>
+      <div id="vncLink" class="vnc-link" style="display:none;">
+        <a href="/vnc.html" target="_blank">Open VNC to complete login →</a>
+      </div>
+    </div>
+
+    <div id="accountsSection" class="section" style="display:none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin-bottom: 0;">Accounts</h2>
+        <button id="syncAllBtn" class="login-btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="syncAllLinkedAccounts()">Sync All Linked</button>
+      </div>
+      <div id="accountsList"></div>
+    </div>
+  </div>
+
+  <div id="linkAccountModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Link to Actual Budget</h3>
+      <p>Account: <strong id="modalAccountName"></strong></p>
+      <p>Choose how to link this Argenta account to Actual Budget:</p>
+      <div class="form-group">
+        <label>Select existing account</label>
+        <select id="linkAccountSelect">
+          <option value="">-- Select an account --</option>
+        </select>
+      </div>
+      <div style="text-align: center; margin: 1rem 0; color: #666;">— or —</div>
+      <div class="form-group">
+        <label>Create new account</label>
+        <input type="text" id="newAccountName" placeholder="Account name">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeLinkModal()">Cancel</button>
+        <button class="login-btn" onclick="confirmLinkAccount()">Link Account</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    let availableBudgets = [];
+
+    function showToast(type, title, message, duration = 5000) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+
+      toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || 'ℹ'}</span>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          ${message ? `<div class="toast-message">${message}</div>` : ''}
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+      `;
+
+      container.appendChild(toast);
+
+      if (duration > 0) {
+        setTimeout(() => {
+          toast.style.animation = 'slideOut 0.3s ease forwards';
+          setTimeout(() => toast.remove(), 300);
+        }, duration);
+      }
+    }
+
+    let isEditingActualConfig = false;
+
+    async function loadActualStatus() {
+      const res = await fetch('/api/actual/status');
+      const data = await res.json();
+      const badge = document.getElementById('actualStatusBadge');
+      const badgeForm = document.getElementById('actualStatusBadgeForm');
+      const configuredSection = document.getElementById('actualConfigured');
+      const formSection = document.getElementById('actualConfigForm');
+      const serverUrlInput = document.getElementById('actualServerUrl');
+      const serverDisplay = document.getElementById('actualServerDisplay');
+      const budgetDisplay = document.getElementById('actualBudgetDisplay');
+      const cancelBtn = document.getElementById('cancelEditBtn');
+
+      if (data.connected || data.configured) {
+        const statusText = data.connected ? 'Connected' : 'Disconnected';
+        const statusClass = data.connected ? 'connected' : 'disconnected';
+
+        badge.textContent = statusText;
+        badge.className = 'connection-status ' + statusClass;
+        badgeForm.textContent = statusText;
+        badgeForm.className = 'connection-status ' + statusClass;
+
+        if (data.serverUrl) {
+          serverUrlInput.value = data.serverUrl;
+          serverDisplay.textContent = data.serverUrl;
+        }
+        if (data.budgetName) {
+          budgetDisplay.textContent = data.budgetName;
+        } else {
+          budgetDisplay.textContent = 'Selected';
+        }
+
+        if (!isEditingActualConfig) {
+          configuredSection.style.display = 'block';
+          formSection.style.display = 'none';
+        }
+        cancelBtn.style.display = 'inline-block';
+      } else {
+        badge.textContent = 'Not Configured';
+        badge.className = 'connection-status unconfigured';
+        badgeForm.textContent = 'Not Configured';
+        badgeForm.className = 'connection-status unconfigured';
+
+        configuredSection.style.display = 'none';
+        formSection.style.display = 'block';
+        cancelBtn.style.display = 'none';
+      }
+    }
+
+    function showActualConfigForm() {
+      isEditingActualConfig = true;
+      document.getElementById('actualConfigured').style.display = 'none';
+      document.getElementById('actualConfigForm').style.display = 'block';
+      document.getElementById('actualPassword').value = '';
+      document.getElementById('budgetSelectGroup').style.display = 'none';
+    }
+
+    function cancelActualConfigEdit() {
+      isEditingActualConfig = false;
+      document.getElementById('actualConfigured').style.display = 'block';
+      document.getElementById('actualConfigForm').style.display = 'none';
+      document.getElementById('budgetSelectGroup').style.display = 'none';
+    }
+
+    async function testActualConnection() {
+      const serverUrl = document.getElementById('actualServerUrl').value;
+      const password = document.getElementById('actualPassword').value;
+
+      if (!serverUrl || !password) {
+        showToast('warning', 'Missing Fields', 'Please enter server URL and password');
+        return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Testing...';
+
+      try {
+        const res = await fetch('/api/actual/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serverUrl, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          availableBudgets = data.budgets || [];
+          if (availableBudgets.length > 0) {
+            const select = document.getElementById('budgetSelect');
+            select.innerHTML = availableBudgets.map(b =>
+              `<option value="${b.groupId}">${b.name}</option>`
+            ).join('');
+            document.getElementById('budgetSelectGroup').style.display = 'block';
+          }
+          showToast('success', 'Connection Successful', data.message);
+        } else {
+          showToast('error', 'Connection Failed', data.message);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Connection';
+      }
+    }
+
+    async function saveActualConfig() {
+      const serverUrl = document.getElementById('actualServerUrl').value;
+      const password = document.getElementById('actualPassword').value;
+      const syncId = document.getElementById('budgetSelect').value;
+
+      const res = await fetch('/api/actual/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serverUrl, password, syncId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast('success', 'Saved', 'Configuration saved successfully');
+        isEditingActualConfig = false;
+        loadActualStatus();
+      } else {
+        showToast('error', 'Failed', data.message);
+      }
+    }
+
+    async function loadStatus() {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+
+      const lastLoginEl = document.getElementById('lastLogin');
+      const statusEl = document.getElementById('loginStatus');
+      const loginBtn = document.getElementById('loginBtn');
+      const vncLink = document.getElementById('vncLink');
+      const accountsSection = document.getElementById('accountsSection');
+      const accountsList = document.getElementById('accountsList');
+
+      if (data.lastLoginTime) {
+        lastLoginEl.textContent = new Date(data.lastLoginTime).toLocaleString();
+      } else {
+        lastLoginEl.textContent = 'Never';
+      }
+
+      if (data.syncInProgress) {
+        statusEl.textContent = 'Login in progress...';
+        statusEl.className = 'status-value status-pending';
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+        vncLink.style.display = 'block';
+      } else if (data.lastLoginSuccess === true) {
+        statusEl.textContent = 'Authenticated';
+        statusEl.className = 'status-value status-success';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Re-authenticate';
+        vncLink.style.display = 'none';
+      } else if (data.lastLoginSuccess === false) {
+        statusEl.textContent = 'Failed: ' + (data.lastError || 'Unknown error');
+        statusEl.className = 'status-value status-error';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Retry Login';
+        vncLink.style.display = 'none';
+      } else {
+        statusEl.textContent = 'Not authenticated';
+        statusEl.className = 'status-value';
+        loginBtn.disabled = false;
+        vncLink.style.display = 'none';
+      }
+
+      if (data.accounts && data.accounts.length > 0) {
+        accountsSection.style.display = 'block';
+        window.accountsData = data.accounts;
+        accountsList.innerHTML = data.accounts.map((acc, idx) => {
+          const pendingBadge = acc.pendingFromArgenta > 0
+            ? `<span style="background:#78350f;color:#fbbf24;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;margin-left:0.5rem;">${acc.pendingFromArgenta} new</span>`
+            : '';
+          const syncedInfo = acc.argentaMovementCount !== null
+            ? ` • ${acc.lastSyncedRowCount || 0}/${acc.argentaMovementCount} from Argenta`
+            : '';
+          return `
+          <div class="account">
+            <div class="account-info">
+              <div class="account-alias">${acc.alias}${pendingBadge}</div>
+              <div class="account-iban">${acc.iban}</div>
+              <div class="account-sync">Last sync: ${acc.lastSyncTime ? new Date(acc.lastSyncTime).toLocaleString() : 'Never'}${syncedInfo}</div>
+              ${acc.actualAccountId
+                ? `<div class="account-linked">✓ Linked to Actual Budget <button class="unlink-btn" onclick="unlinkAccount('${acc.id}', '${acc.alias}')">Unlink</button></div>`
+                : '<div class="account-linked" style="color:#fbbf24;">⚠ Not linked to Actual Budget</div>'}
+            </div>
+            <div class="account-actions">
+              <button class="sync-btn" onclick="syncAccountByIndex(${idx}, this, false)">Sync New</button>
+              <button class="sync-btn btn-secondary" onclick="syncAccountByIndex(${idx}, this, true)">Full Resync</button>
+            </div>
+          </div>
+        `}).join('');
+      } else {
+        accountsSection.style.display = 'none';
+      }
+    }
+
+    async function startLogin() {
+      const res = await fetch('/api/sync', { method: 'POST' });
+      if (res.ok) {
+        document.getElementById('vncLink').style.display = 'block';
+        loadStatus();
+      }
+    }
+
+    let pendingLinkAccountId = null;
+    let pendingLinkAlias = null;
+    let pendingLinkIban = null;
+
+    async function syncAllLinkedAccounts() {
+      const linkedAccounts = (window.accountsData || []).filter(acc => acc.actualAccountId);
+
+      if (linkedAccounts.length === 0) {
+        showToast('warning', 'No Linked Accounts', 'No accounts are linked to Actual Budget');
+        return;
+      }
+
+      const btn = document.getElementById('syncAllBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Syncing...';
+
+      let successCount = 0;
+      let failCount = 0;
+      let totalMovements = 0;
+      let totalAdded = 0;
+      let totalUpdated = 0;
+
+      for (const acc of linkedAccounts) {
+        try {
+          const res = await fetch(`/api/sync/${acc.id}`, { method: 'POST' });
+          const data = await res.json();
+
+          if (data.needsReauth) {
+            showToast('warning', 'Session Expired', 'Please re-authenticate with Argenta');
+            const loginRes = await fetch('/api/sync', { method: 'POST' });
+            if (loginRes.ok) {
+              window.open('/vnc.html', '_blank');
+              loadStatus();
+            }
+            break;
+          }
+
+          if (res.ok) {
+            successCount++;
+            totalMovements += data.movementCount || 0;
+            if (data.actualBudget?.success) {
+              totalAdded += data.actualBudget.added || 0;
+              totalUpdated += data.actualBudget.updated || 0;
+            }
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = originalText;
+
+      if (successCount > 0) {
+        let message = `Synced ${successCount} account${successCount > 1 ? 's' : ''}.`;
+        message += `\nFetched ${totalMovements} movements.`;
+        message += `\nActual Budget: Added ${totalAdded}, Updated ${totalUpdated}`;
+        if (failCount > 0) {
+          message += `\n${failCount} account${failCount > 1 ? 's' : ''} failed.`;
+        }
+        showToast(failCount > 0 ? 'warning' : 'success', 'Sync Complete', message, 8000);
+      } else {
+        showToast('error', 'Sync Failed', 'All accounts failed to sync');
+      }
+
+      loadStatus();
+    }
+
+    function syncAccountByIndex(idx, btn, fullSync) {
+      const acc = window.accountsData[idx];
+      syncAccount(acc.id, acc.alias, acc.iban, btn, fullSync);
+    }
+
+    async function syncAccount(accountId, alias, iban, btn, fullSync = false) {
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Syncing...';
+
+      try {
+        const url = `/api/sync/${accountId}${fullSync ? '?full=true' : ''}`;
+        const res = await fetch(url, { method: 'POST' });
+        const data = await res.json();
+
+        if (data.needsAccountLink) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          showLinkModal(accountId, alias, iban);
+          return;
+        }
+
+        if (data.needsReauth) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          showToast('warning', 'Session Expired', 'Opening login page...');
+          const res = await fetch('/api/sync', { method: 'POST' });
+          if (res.ok) {
+            window.open('/vnc.html', '_blank');
+            loadStatus();
+          }
+          return;
+        }
+
+        if (res.ok) {
+          let message = `Fetched ${data.movementCount} movements from Argenta.`;
+          let toastType = 'success';
+          if (data.actualBudget) {
+            const ab = data.actualBudget;
+            if (ab.success) {
+              message += `\nActual Budget: Added ${ab.added}, Updated ${ab.updated} transactions`;
+            } else {
+              message += `\nActual Budget: ${ab.message}`;
+              toastType = 'warning';
+            }
+            if (ab.errors && ab.errors.length > 0) {
+              message += `\nErrors: ${ab.errors.join(', ')}`;
+              toastType = 'warning';
+            }
+          }
+          showToast(toastType, 'Sync Complete', message, 8000);
+          loadStatus();
+        } else {
+          showToast('error', 'Sync Failed', data.message);
+        }
+      } catch (err) {
+        showToast('error', 'Sync Error', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function showLinkModal(accountId, alias, iban) {
+      pendingLinkAccountId = accountId;
+      pendingLinkIban = iban;
+      document.getElementById('modalAccountName').textContent = `${alias} (${iban})`;
+      document.getElementById('newAccountName').value = `Argenta ${iban}`;
+
+      const accounts = await fetch('/api/actual/accounts').then(r => r.json());
+      const select = document.getElementById('linkAccountSelect');
+      select.innerHTML = '<option value="">-- Select an account --</option>' +
+        accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+      document.getElementById('linkAccountModal').classList.add('active');
+    }
+
+    function closeLinkModal() {
+      document.getElementById('linkAccountModal').classList.remove('active');
+      pendingLinkAccountId = null;
+      pendingLinkIban = null;
+    }
+
+    async function confirmLinkAccount() {
+      const existingAccountId = document.getElementById('linkAccountSelect').value;
+      const newAccountName = document.getElementById('newAccountName').value;
+
+      let actualAccountId = existingAccountId;
+
+      if (!existingAccountId && newAccountName) {
+        const res = await fetch('/api/actual/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newAccountName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          actualAccountId = data.accountId;
+        } else {
+          showToast('error', 'Account Creation Failed', data.message);
+          return;
+        }
+      }
+
+      if (!actualAccountId) {
+        showToast('warning', 'Missing Selection', 'Please select an existing account or enter a name for a new one');
+        return;
+      }
+
+      const linkRes = await fetch('/api/link-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          argentaAccountId: pendingLinkAccountId,
+          actualAccountId: actualAccountId
+        })
+      });
+
+      if (linkRes.ok) {
+        closeLinkModal();
+        loadStatus();
+        showToast('success', 'Account Linked', 'You can now sync this account');
+      } else {
+        showToast('error', 'Linking Failed', 'Failed to link account');
+      }
+    }
+
+    async function unlinkAccount(accountId, alias) {
+      if (!confirm(`Unlink "${alias}" from Actual Budget? This will reset sync history.`)) {
+        return;
+      }
+
+      const res = await fetch('/api/unlink-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ argentaAccountId: accountId })
+      });
+
+      if (res.ok) {
+        loadStatus();
+        showToast('success', 'Account Unlinked', `${alias} has been unlinked from Actual Budget`);
+      } else {
+        showToast('error', 'Unlink Failed', 'Failed to unlink account');
+      }
+    }
+
+    loadStatus();
+    loadActualStatus();
+    setInterval(loadStatus, 3000);
+  </script>
+</body>
+</html>
+
