@@ -49,9 +49,11 @@ export class SyncService {
         this.configRepo.setLoginError(result.error || "Login failed");
         console.error("Login failed:", result.error);
       }
-    } catch (error: any) {
-      console.error("Login failed:", error.message);
-      this.configRepo.setLoginError(error.message);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Login failed:", message);
+      this.configRepo.setLoginError(message);
     } finally {
       await this.argentaClient.closeLoginSession();
       this.state.inProgress = false;
@@ -176,8 +178,10 @@ export class SyncService {
     try {
       writeFileSync(filename, JSON.stringify(debugData, null, 2));
       console.log(`Debug data saved to ${filename}`);
-    } catch (error: any) {
-      console.error(`Failed to save debug file: ${error.message}`);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(`Failed to save debug file: ${message}`);
     }
   }
 }

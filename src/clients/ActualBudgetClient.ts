@@ -35,14 +35,16 @@ export class ActualBudgetClient {
           groupId: b.groupId || "",
         })),
       };
-    } catch (error: any) {
-      if (error?.message?.includes("Authentication failed")) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Connection failed";
+      if (message.includes("Authentication failed")) {
         return {
           success: false,
           message: "Authentication failed. Check your password.",
         };
       }
-      return { success: false, message: error.message || "Connection failed" };
+      return { success: false, message };
     }
   }
 
@@ -115,8 +117,10 @@ export class ActualBudgetClient {
   async createAccount(name: string): Promise<string | null> {
     try {
       return await actual.createAccount({ name });
-    } catch (error: any) {
-      console.error("Failed to create account:", error.message);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Failed to create account:", message);
       return null;
     }
   }
@@ -132,16 +136,18 @@ export class ActualBudgetClient {
         success: true,
         added: result.added.length,
         updated: result.updated.length,
-        errors: (result.errors || []).map((e: any) => e.message || String(e)),
+        errors: (result.errors || []).map((e: { message: string }) => e.message),
         message: `Imported ${result.added.length} new, updated ${result.updated.length} existing transactions`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
       return {
         success: false,
         added: 0,
         updated: 0,
-        errors: [error.message],
-        message: `Import failed: ${error.message}`,
+        errors: [message],
+        message: `Import failed: ${message}`,
       };
     }
   }

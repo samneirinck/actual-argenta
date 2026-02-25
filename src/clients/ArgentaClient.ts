@@ -75,7 +75,9 @@ export class ArgentaClient {
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
-    const contextOptions: any = { viewport: { width: 1280, height: 720 } };
+    const contextOptions: Parameters<typeof this.browser.newContext>[0] = {
+      viewport: { width: 1280, height: 720 },
+    };
     if (existsSync(BROWSER_STATE_PATH)) {
       contextOptions.storageState = BROWSER_STATE_PATH;
     }
