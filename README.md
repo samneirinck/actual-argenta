@@ -17,7 +17,11 @@ Uses Playwright for browser automation with VNC access for secure login.
 ### Docker (Recommended)
 
 ```bash
-docker compose up --build
+docker run -d \
+  --name actual-argenta \
+  -p 3000:3000 \
+  -v actual-argenta-data:/app/data \
+  ghcr.io/samneirinck/actual-argenta:latest
 ```
 
 Open http://localhost:3000 to access the web UI.
@@ -27,6 +31,12 @@ Open http://localhost:3000 to access the web UI.
 ```bash
 npm install
 npm run dev
+```
+
+### Build from Source
+
+```bash
+docker compose up --build
 ```
 
 ## How It Works
