@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/samneirinck/actual-argenta/compare/v1.0.0...v1.0.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* update dependencies ([a2413d3](https://github.com/samneirinck/actual-argenta/commit/a2413d3aae591e23953a3dade9f33556a7afa268))
+
 ## 1.0.0 (2026-02-25)
 
 
