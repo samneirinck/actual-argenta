@@ -9,6 +9,9 @@ cleanup() {
 
 trap cleanup SIGTERM SIGINT
 
+DISPLAY_NUM="${DISPLAY#:}"
+rm -f /tmp/.X${DISPLAY_NUM}-lock /tmp/.X11-unix/X${DISPLAY_NUM}
+
 echo "Starting Xvfb..."
 Xvfb $DISPLAY -screen 0 1280x1024x24 &
 sleep 1
