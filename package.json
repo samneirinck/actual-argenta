@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@actual-app/api": "^26.2.1",
-    "better-sqlite3": "12.6.2",
+    "better-sqlite3": "12.8.0",
     "express": "5.2.1",
     "http-proxy-middleware": "3.0.5",
     "playwright": "1.58.2"
